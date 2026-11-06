@@ -2,7 +2,9 @@
 
 > Runs in demo mode without PostgreSQL. For the full version, install PostgreSQL, run the SQL files in `database/`, and copy `.env.example` to `.env`.
 
-
+**Prepared by:** Monisha  
+**Student ID:** 251801360012  
+**Institution:** Centurion University  
 **Version:** 1.0 (Fullstack PostgreSQL + Express REST API + Modern Cinema Web UI)
 
 ---
@@ -25,9 +27,9 @@ The **Movie Ticket Booking System** is a fullstack web application constructed s
 | Layer | Technology Used |
 | :--- | :--- |
 | **Presentation (Frontend)** | HTML5, Vanilla CSS3 (Glassmorphism & Cinema Dark Palette), Modular JavaScript |
-| **Backend API** | Node.js, Express.js REST API |
-| **Database** | PostgreSQL (`pg` Connection Pool) |
-| **Authentication** | Password verification & role-based routing (Customer / Admin) |
+| **Backend API** | Java 17, Spring Boot REST API |
+| **Database** | PostgreSQL (JDBC / HikariCP connection pool) |
+| **Authentication** | BCrypt password hashing, JWT tokens, role-based access (Customer / Admin) |
 | **Design System** | Google Fonts ('Outfit', 'Plus Jakarta Sans'), FontAwesome 6 Icons |
 
 ---
@@ -57,8 +59,9 @@ WHERE status = 'CONFIRMED';
 ## 🚀 Quick Start & Setup Guide
 
 ### 1️⃣ Prerequisites
-- **Node.js**: v14.0 or higher ([Download Node.js](https://nodejs.org/))
-- **PostgreSQL**: v12.0 or higher ([Download PostgreSQL](https://www.postgresql.org/))
+- **Java**: JDK 17 or higher ([Download Java](https://adoptium.net/))
+- **Maven**: 3.9 or higher ([Install Maven](https://maven.apache.org/install.html))
+- **PostgreSQL**: v12.0 or higher for persistent database mode ([Download PostgreSQL](https://www.postgresql.org/))
 
 ---
 
@@ -95,33 +98,33 @@ For PostgreSQL mode, copy `.env.example` to `.env` and replace the placeholders 
 Copy-Item .env.example .env
 ```
 
-Set JWT_SECRET to a private, randomly generated secret before starting the server. DATABASE_URL can be used instead of the individual PG* settings. Login returns a signed token that expires after two hours. Registration hashes passwords with bcrypt; existing legacy password hashes remain supported.
+Spring Boot loads the copied `.env` file when present. Set `JWT_SECRET` to a private, randomly generated value of at least 32 characters. `DATABASE_URL` accepts `jdbc:postgresql://...` or `postgresql://...`; otherwise the individual `PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER`, and `PGPASSWORD` settings are used. Login returns a signed token that expires after two hours. Registration hashes passwords with BCrypt; existing legacy password hashes remain supported.
 
 ---
 
-### 4️⃣ Install Dependencies & Launch Backend API
+### 4️⃣ Build & Launch the Java Backend
 
 In the project root directory:
 
 ```bash
-# Install dependencies
-npm install
+# Build the Spring Boot application
+mvn clean package
 
-# Start the Express server
-npm start
+# Start the packaged Java backend
+java -jar target/cinewave-1.0.0.jar
 ```
 
-Output:
-```
-=======================================================
-🎬 Movie Ticket Booking System API Server running
-📍 URL: http://localhost:3000
-=======================================================
-```
+The Spring Boot startup log will show the embedded server running on port `3000`.
 
 Open your browser and navigate to: **`http://localhost:3000`**
 
-> 💡 **Fallback / Demo Mode:** If PostgreSQL is not running, the web frontend automatically initializes an interactive in-memory demo state with sample movies, showtimes, seat maps, booking history, dashboards, and role-based Quick Login buttons. These sessions and any bookings made in them are local demo data only; they do not create database accounts or issue server JWTs.
+> 💡 **Fallback / Demo Mode:** The Java server can start when PostgreSQL is unavailable; `/api/health` then reports `db_offline`. The frontend in `public/` automatically uses its browser-local demo data for movies, showtimes, seat maps, booking history, dashboards, demo Quick Login buttons, and the booking flow. Demo activity is local to the browser and does not create database accounts or server JWTs.
+
+The HTML, CSS, and JavaScript frontend remains in `public/` and is served by Spring Boot. The former Node.js backend files are preserved under `legacy-node/`; they are not used to start the Java application.
+
+### Java Source Files
+
+The web backend entry point is `src/main/java/com/movieticketbooking/Main.java`. The existing `Movie.java`, `Show.java`, and `User.java` model classes are retained under `src/main/java/com/movieticketbooking/model/`. `MainApp.java` is the original Swing screen and is retained separately; run `Main` to start the web backend.
 
 ---
 
@@ -135,20 +138,22 @@ The customer and admin profiles offered by the offline Quick Login buttons are d
 
 | Method | Endpoint | Description |
 | :--- | :--- | :--- |
-| `POST` | `/api/auth/register` | Register a customer account with a bcrypt-hashed password |
+| `GET` | `/api/health` | Check PostgreSQL availability |
+| `POST` | `/api/auth/register` | Register a customer account with a BCrypt-hashed password |
 | `POST` | `/api/auth/login` | Authenticate credentials and return user, role, and a 2-hour JWT |
-| `GET` | `/api/movies` | Fetch list of all active movies |
-| `POST` | `/api/movies` | (Admin JWT required) Add new movie listing |
-| `PUT` | `/api/movies/:id` | (Admin JWT required) Update movie listing |
-| `DELETE` | `/api/movies/:id` | (Admin JWT required) Delete movie listing |
-| `GET` | `/api/shows?date=YYYY-MM-DD&movie_id=:id` | Fetch shows with movie and screen info; either filter is optional |
-| `GET` | `/api/movies/:id/dates` | List distinct upcoming show dates for a movie, starting today |
-| `POST` | `/api/shows` | (Admin JWT required) Schedule a show and set tier pricing; rejects past shows (400) and screen/time conflicts (409) |
-| `GET` | `/api/shows/:id/seats` | Get visual seat matrix for a show with real-time availability |
-| `POST` | `/api/bookings` | Execute atomic multi-seat booking transaction; rejects shows that have started and returns `show_date` and `show_time` |
-| `GET` | `/api/bookings/user/:userId` | Get customer booking history |
-| `POST` | `/api/bookings/cancel/:id` | Cancel all seats in the booking reference; returns 400 within two hours of showtime |
-| `GET` | `/api/admin/reports?from=YYYY-MM-DD&to=YYYY-MM-DD` | (Admin JWT required) Get filtered sales KPIs, daily revenue, per-movie/category sales, today's revenue, upcoming occupancy, and upcoming shows; dates are optional and inclusive, filtered by booking time |
+| `GET` | `/api/movies` | Fetch all movies |
+| `GET` | `/api/movies/:id/dates` | List upcoming show dates for a movie |
+| `POST` | `/api/movies` | (Admin JWT required) Add a movie |
+| `PUT` | `/api/movies/:id` | (Admin JWT required) Update a movie |
+| `DELETE` | `/api/movies/:id` | (Admin JWT required) Delete a movie |
+| `GET` | `/api/screens` | Fetch screens |
+| `GET` | `/api/shows?date=YYYY-MM-DD&movie_id=:id` | Fetch shows with movie and screen information |
+| `POST` | `/api/shows` | (Admin JWT required) Schedule a show |
+| `GET` | `/api/shows/:id/seats` | Get a show's seat map and availability |
+| `POST` | `/api/bookings` | (JWT required) Book multiple seats transactionally |
+| `GET` | `/api/bookings/user/:userId` | (JWT required) Fetch the user's booking history |
+| `POST` | `/api/bookings/cancel/:id` | (JWT required) Cancel a booking reference |
+| `GET` | `/api/admin/reports?from=YYYY-MM-DD&to=YYYY-MM-DD` | (Admin JWT required) Fetch sales, revenue, and occupancy reports |
 
 Send the login token as `Authorization: Bearer <token>` on admin movie write, show creation, and report requests. Requests without a valid Admin token receive HTTP 401 or 403.
 
