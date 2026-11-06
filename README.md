@@ -3,7 +3,6 @@
 > Runs in demo mode without PostgreSQL. For the full version, install PostgreSQL, run the SQL files in `database/`, and copy `.env.example` to `.env`.
 
 **Prepared by:** Monisha  
-**Student ID:** 251801360012  
 **Institution:** Centurion University  
 **Version:** 1.0 (Fullstack PostgreSQL + Express REST API + Modern Cinema Web UI)
 
@@ -184,6 +183,5 @@ Send the login token as `Authorization: Bearer <token>` on admin movie write, sh
 ## 👩‍🎓 Author & Course Info
 
 - **Developer:** Monisha
-- **Student ID:** 251801360012
 - **Institution:** Centurion University
 - **Project:** Movie Ticket Booking System (SRS & SDD Implementation)
